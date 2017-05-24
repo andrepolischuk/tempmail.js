@@ -2,38 +2,10 @@
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var babelPolyfill = require('babel-polyfill');
+require('babel-polyfill');
 var md5 = _interopDefault(require('blueimp-md5'));
-var isomorphicFetch = require('isomorphic-fetch');
-var fetchJsonp$1 = require('fetch-jsonp');
-
-var babelHelpers = {};
-
-babelHelpers.classCallCheck = function (instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-};
-
-babelHelpers.createClass = function () {
-  function defineProperties(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, descriptor.key, descriptor);
-    }
-  }
-
-  return function (Constructor, protoProps, staticProps) {
-    if (protoProps) defineProperties(Constructor.prototype, protoProps);
-    if (staticProps) defineProperties(Constructor, staticProps);
-    return Constructor;
-  };
-}();
-
-babelHelpers;
+require('isomorphic-fetch');
+require('fetch-jsonp');
 
 var IS_NODE = typeof window === 'undefined';
 var API_BASE = 'https://api.temp-mail.ru/request/';
@@ -41,7 +13,6 @@ var API_FORMAT = '/format/' + (IS_NODE ? 'json' : 'jsonp?callback=messages');
 var ENDPOINT_INBOX = 'mail/id';
 var ENDPOINT_DOMAINS = 'domains';
 var ENDPOINT_DELETE = 'delete/id';
-var ADDRESS_DOMAINS = ['dlemail.ru', 'flemail.ru', 'shotmail.ru', 'walkmail.ru'];
 
 /**
  * Format Mail
@@ -63,12 +34,13 @@ function formatMessage(msg) {
 
 /**
  * Generate random tempmail address
+ * @param   {array}  domains
  * @returns {string} address
  */
-function randomEmail() {
+function randomEmail(domains) {
   var prefix = md5(Math.random() + Date() + Math.random());
-  var suffix = ADDRESS_DOMAINS[Math.floor(Math.random() * ADDRESS_DOMAINS.length)];
-  return prefix + '@' + suffix;
+  var suffix = domains[Math.floor(Math.random() * domains.length)];
+  return prefix + suffix;
 }
 
 /**
@@ -105,63 +77,123 @@ function deleteMessageURL(message_id) {
   return endpoint(ENDPOINT_DELETE + '/' + message_id);
 }
 
+var classCallCheck = function (instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+};
+
+var createClass = function () {
+  function defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];
+      descriptor.enumerable = descriptor.enumerable || false;
+      descriptor.configurable = true;
+      if ("value" in descriptor) descriptor.writable = true;
+      Object.defineProperty(target, descriptor.key, descriptor);
+    }
+  }
+
+  return function (Constructor, protoProps, staticProps) {
+    if (protoProps) defineProperties(Constructor.prototype, protoProps);
+    if (staticProps) defineProperties(Constructor, staticProps);
+    return Constructor;
+  };
+}();
+
 var TempMail = function () {
   /**
    * @constructor
-   * @param {string} address - A temp-mail.ru email address. Generated if not provided.
    */
+  function TempMail() {
+    classCallCheck(this, TempMail);
 
-  function TempMail(address) {
-    babelHelpers.classCallCheck(this, TempMail);
-
-    this.address = address || randomEmail();
-    this.address_id = md5(this.address);
     this.fetch = IS_NODE ? fetch : fetchJsonp;
   }
 
   /**
-   * Get Mail
+   * Create
+   * @param {string} address - A temp-mail.ru email address. Generated if not provided.
    */
 
 
-  babelHelpers.createClass(TempMail, [{
-    key: 'getMail',
-    value: function getMail() {
-      var response, messages;
-      return regeneratorRuntime.async(function getMail$(_context) {
+  createClass(TempMail, [{
+    key: 'create',
+    value: function create(address) {
+      var domains;
+      return regeneratorRuntime.async(function create$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              _context.prev = 0;
-              _context.next = 3;
-              return regeneratorRuntime.awrap(this.fetch(inboxURL(this.address_id)));
+              this.address = address;
 
-            case 3:
-              response = _context.sent;
-              messages = response.json();
-
-              if (!messages[0]) {
-                _context.next = 7;
+              if (address) {
+                _context.next = 6;
                 break;
               }
 
-              return _context.abrupt('return', messages.map(formatMessage));
+              _context.next = 4;
+              return regeneratorRuntime.awrap(this.domains());
+
+            case 4:
+              domains = _context.sent;
+
+              this.address = randomEmail(domains);
+
+            case 6:
+              this.address_id = md5(this.address);
+              return _context.abrupt('return', this.address);
+
+            case 8:
+            case 'end':
+              return _context.stop();
+          }
+        }
+      }, null, this);
+    }
+
+    /**
+     * Get Mail
+     */
+
+  }, {
+    key: 'getMail',
+    value: function getMail() {
+      var response, messages;
+      return regeneratorRuntime.async(function getMail$(_context2) {
+        while (1) {
+          switch (_context2.prev = _context2.next) {
+            case 0:
+              _context2.prev = 0;
+              _context2.next = 3;
+              return regeneratorRuntime.awrap(this.fetch(inboxURL(this.address_id)));
+
+            case 3:
+              response = _context2.sent;
+              messages = response.json();
+
+              if (!messages[0]) {
+                _context2.next = 7;
+                break;
+              }
+
+              return _context2.abrupt('return', messages.map(formatMessage));
 
             case 7:
-              return _context.abrupt('return', messages);
+              return _context2.abrupt('return', messages);
 
             case 10:
-              _context.prev = 10;
-              _context.t0 = _context['catch'](0);
+              _context2.prev = 10;
+              _context2.t0 = _context2['catch'](0);
 
-              console.error(_context.t0);
+              console.error(_context2.t0);
 
             case 13:
-              return _context.abrupt('return', []);
+              return _context2.abrupt('return', []);
 
             case 14:
             case 'end':
-              return _context.stop();
+              return _context2.stop();
           }
         }
       }, null, this, [[0, 10]]);
@@ -175,54 +207,17 @@ var TempMail = function () {
     key: 'domains',
     value: function domains() {
       var domains;
-      return regeneratorRuntime.async(function domains$(_context2) {
-        while (1) {
-          switch (_context2.prev = _context2.next) {
-            case 0:
-              _context2.prev = 0;
-              _context2.next = 3;
-              return regeneratorRuntime.awrap(this.fetch(domainsURL()));
-
-            case 3:
-              domains = _context2.sent;
-              return _context2.abrupt('return', domains.json());
-
-            case 7:
-              _context2.prev = 7;
-              _context2.t0 = _context2['catch'](0);
-
-              console.error(_context2.t0);
-
-            case 10:
-              return _context2.abrupt('return', []);
-
-            case 11:
-            case 'end':
-              return _context2.stop();
-          }
-        }
-      }, null, this, [[0, 7]]);
-    }
-
-    /**
-     * Delete Message
-     */
-
-  }, {
-    key: 'deleteMessage',
-    value: function deleteMessage(message_id) {
-      var deletedMessage;
-      return regeneratorRuntime.async(function deleteMessage$(_context3) {
+      return regeneratorRuntime.async(function domains$(_context3) {
         while (1) {
           switch (_context3.prev = _context3.next) {
             case 0:
               _context3.prev = 0;
               _context3.next = 3;
-              return regeneratorRuntime.awrap(this.fetch(deleteMessageURL(message_id)));
+              return regeneratorRuntime.awrap(this.fetch(domainsURL()));
 
             case 3:
-              deletedMessage = _context3.sent;
-              return _context3.abrupt('return', deletedMessage.json());
+              domains = _context3.sent;
+              return _context3.abrupt('return', domains.json());
 
             case 7:
               _context3.prev = 7;
@@ -236,6 +231,43 @@ var TempMail = function () {
             case 11:
             case 'end':
               return _context3.stop();
+          }
+        }
+      }, null, this, [[0, 7]]);
+    }
+
+    /**
+     * Delete Message
+     */
+
+  }, {
+    key: 'deleteMessage',
+    value: function deleteMessage(message_id) {
+      var deletedMessage;
+      return regeneratorRuntime.async(function deleteMessage$(_context4) {
+        while (1) {
+          switch (_context4.prev = _context4.next) {
+            case 0:
+              _context4.prev = 0;
+              _context4.next = 3;
+              return regeneratorRuntime.awrap(this.fetch(deleteMessageURL(message_id)));
+
+            case 3:
+              deletedMessage = _context4.sent;
+              return _context4.abrupt('return', deletedMessage.json());
+
+            case 7:
+              _context4.prev = 7;
+              _context4.t0 = _context4['catch'](0);
+
+              console.error(_context4.t0);
+
+            case 10:
+              return _context4.abrupt('return', []);
+
+            case 11:
+            case 'end':
+              return _context4.stop();
           }
         }
       }, null, this, [[0, 7]]);
